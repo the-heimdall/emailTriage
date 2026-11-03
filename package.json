@@ -6,6 +6,6 @@
   "description": "Assistive first-pass triage for customer emails. Classifies intent and flags possible financial distress for human review. Never acts on a customer.",
   "scripts": {
     "start": "node server.js",
-    "check": "node checks.js"
+    "test": "node --test"
   }
 }
