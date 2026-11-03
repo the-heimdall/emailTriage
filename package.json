@@ -1,0 +1,11 @@
+{
+  "name": "customer-email-triage-pill",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Assistive first-pass triage for customer emails. Classifies intent and flags possible financial distress for human review. Never acts on a customer.",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node checks.js"
+  }
+}
