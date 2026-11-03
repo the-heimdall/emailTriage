@@ -15,7 +15,7 @@ as evidence.
 - **Not a regulatory or compliance decision engine.** Ofgem expects suppliers to have
   governance, training, recording and quality assurance around identifying customers in
   vulnerable situations. This feeds that process, it does not replace any part of it.
-- **The bundled checks prove wiring, not quality.** They are emails we wrote ourselves.
+- **The bundled tests prove wiring, not quality.** They are emails we wrote ourselves.
   Real accuracy needs a few hundred anonymised, agent-labelled emails and per-category
   precision and recall.
 - **CORS is dev-scoped** to `http://localhost:5173` and must be narrowed or removed before
@@ -26,7 +26,7 @@ as evidence.
 ```bash
 npm --prefix customer-email-triage-pill start        # API on 3005
 npm --prefix customer-email-triage-pill/web run dev  # dashboard on 5173
-npm --prefix customer-email-triage-pill run check    # 9 demo checks
+npm --prefix customer-email-triage-pill test         # 12 unit tests
 ```
 
 ## Routes

@@ -197,7 +197,7 @@ explained afterwards to a complaints team or a regulator, in the customer's own 
 become "i have" and punctuation is stripped, so one stored phrase catches many phrasings.
 But the tidier also keeps an index map back to the original, so the evidence quoted is the
 raw email. That is why the chip says `won't have enough money` and not
-`will not have enough money`. The check script asserts this on every case: every keyword
+`will not have enough money`. A test asserts this on every case: every keyword
 must appear character for character in the original body.
 
 **How to explain it in the demo.** "I match against a normalised copy so one phrase catches
