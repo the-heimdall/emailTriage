@@ -1,0 +1,27 @@
+# Saved answers for "sam build" and "sam deploy", so you never retype them.
+version = 0.1
+
+# Reuse unchanged build output, which makes "sam build" faster.
+[default.build.parameters]
+cached = true
+
+# Used by: sam deploy --config-env staging
+[staging.deploy.parameters]
+stack_name = "email-triage-staging"
+region = "eu-west-2"
+# Let SAM create and reuse its own S3 bucket for uploading your code.
+resolve_s3 = true
+# You agree that this stack may create IAM roles (the function needs one).
+capabilities = "CAPABILITY_IAM"
+# Show the planned changes and wait for "y" before applying them.
+confirm_changeset = true
+parameter_overrides = "Stage=staging"
+
+# Used by: sam deploy --config-env production
+[production.deploy.parameters]
+stack_name = "email-triage-production"
+region = "eu-west-2"
+resolve_s3 = true
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+parameter_overrides = "Stage=production"

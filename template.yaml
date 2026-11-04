@@ -1,0 +1,51 @@
+# Tells CloudFormation which language version this file uses.
+AWSTemplateFormatVersion: '2010-09-09'
+# Turns on SAM's shortcuts (AWS::Serverless::...) before CloudFormation reads the file.
+Transform: AWS::Serverless-2016-10-31
+Description: Customer email triage pill (API)
+
+# Values you pass in at deploy time, so one file can build staging and production.
+Parameters:
+  Stage:
+    Type: String
+    AllowedValues: [staging, production]
+
+Resources:
+  # ---------- API ----------
+  # An HTTP API: the public web address that receives requests.
+  TriageApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      # At most 10 requests a second, with short bursts of 20. Protects your bill.
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 20
+        ThrottlingRateLimit: 10
+
+  # The Lambda function: your code, run by AWS only when a request arrives.
+  TriageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      # Only the src/ folder is uploaded. Handler = file name (lambda) + export name (handler).
+      CodeUri: src/
+      Handler: lambda.handler
+      Runtime: nodejs24.x
+      # arm64 runs on AWS Graviton chips: same code, lower price.
+      Architectures: [arm64]
+      MemorySize: 256
+      Timeout: 10
+      # Each event connects one route on the API to this function.
+      Events:
+        Samples:
+          Type: HttpApi
+          Properties: { ApiId: !Ref TriageApi, Path: /api/samples, Method: GET }
+        Classify:
+          Type: HttpApi
+          Properties: { ApiId: !Ref TriageApi, Path: /api/classify, Method: POST }
+        Batch:
+          Type: HttpApi
+          Properties: { ApiId: !Ref TriageApi, Path: /api/classify/batch, Method: POST }
+
+# Values printed after a deploy.
+Outputs:
+  ApiUrl:
+    Value: !Sub https://${TriageApi}.execute-api.${AWS::Region}.amazonaws.com
