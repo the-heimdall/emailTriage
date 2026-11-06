@@ -2,7 +2,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 # Turns on SAM's shortcuts (AWS::Serverless::...) before CloudFormation reads the file.
 Transform: AWS::Serverless-2016-10-31
-Description: Customer email triage pill (API)
+Description: Customer email triage pill (API and dashboard)
 
 # Values you pass in at deploy time, so one file can build staging and production.
 Parameters:
@@ -16,6 +16,12 @@ Resources:
   TriageApi:
     Type: AWS::Serverless::HttpApi
     Properties:
+      # Added in Chapter 6. API Gateway answers CORS checks for the dashboard's address only.
+      CorsConfiguration:
+        AllowOrigins:
+          - !Sub https://${WebDistribution.DomainName}
+        AllowMethods: [GET, POST, OPTIONS]
+        AllowHeaders: [content-type]
       # At most 10 requests a second, with short bursts of 20. Protects your bill.
       DefaultRouteSettings:
         ThrottlingBurstLimit: 20
@@ -45,7 +51,70 @@ Resources:
           Type: HttpApi
           Properties: { ApiId: !Ref TriageApi, Path: /api/classify/batch, Method: POST }
 
-# Values printed after a deploy.
+  # ---------- Dashboard ----------
+  # A private S3 bucket that holds the built React files. Nobody can read it directly.
+  WebBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # Lets CloudFront sign its requests to the bucket, so the bucket can stay private.
+  WebOriginAccess:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${AWS::StackName}-web
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # CloudFront: the public HTTPS address for the dashboard, with copies cached worldwide.
+  WebDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        # Visiting the bare address serves index.html.
+        DefaultRootObject: index.html
+        Origins:
+          - Id: web
+            DomainName: !GetAtt WebBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt WebOriginAccess.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: web
+          # Anyone who types http:// is sent to https://.
+          ViewerProtocolPolicy: redirect-to-https
+          # AWS's ready-made "CachingOptimized" policy.
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+
+  # The bucket's own rule: only this one CloudFront distribution may read files.
+  WebBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub ${WebBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${WebDistribution}
+
+# Values printed after a deploy, and read by scripts/deploy-web.sh.
 Outputs:
   ApiUrl:
     Value: !Sub https://${TriageApi}.execute-api.${AWS::Region}.amazonaws.com
+  WebUrl:
+    Value: !Sub https://${WebDistribution.DomainName}
+  WebBucketName:
+    Value: !Ref WebBucket
+  DistributionId:
+    Value: !Ref WebDistribution
