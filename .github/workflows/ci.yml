@@ -19,23 +19,33 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       # Download your code onto the machine.
-      - uses: actions/checkout@v5
+      - name: Check out the code
+        uses: actions/checkout@v5
+
       # Install Node 24, the same version Lambda runs.
-      - uses: actions/setup-node@v6
+      - name: Set up Node 24
+        uses: actions/setup-node@v6
         with:
           node-version: 24
-      - name: Unit, API and adapter tests
+
+      - name: Run unit, API and adapter tests
         run: npm test
+
+      # Exact versions from web/package-lock.json, so every run uses the same packages.
+      - name: Install dashboard dependencies
+        run: npm ci --prefix web
+
       # Proves the React dashboard still builds.
       - name: Build the dashboard
-        run: |
-          npm ci --prefix web
-          npm --prefix web run build
-      # Install the SAM CLI. v3 runs on Node 24 and passes the job's token by default,
-      # which avoids GitHub's rate limit.
-      - uses: aws-actions/setup-sam@v3
+        run: npm --prefix web run build
+
+      # v3 runs on Node 24 and passes the job's token by default, which avoids
+      # GitHub's rate limit.
+      - name: Install the SAM CLI
+        uses: aws-actions/setup-sam@v3
         with:
           use-installer: true
+
       # Checks the template locally. No AWS login needed.
-      - name: Check the AWS template
+      - name: Validate the SAM template
         run: sam validate --lint --region eu-west-2
