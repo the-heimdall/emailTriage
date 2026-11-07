@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const API = 'http://localhost:3005';
+const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3005';
 
 // Only a display order. Any category the API returns that is not listed here still gets
 // its own column, appended at the end. That is what keeps "add a category, change no
@@ -25,7 +25,7 @@ export default function App() {
       }
       setShowSamples((v) => !v);
     } catch (error) {
-      setState({ status: 'error', message: `${error.message}. Is the API running on 3005?` });
+      setState({ status: 'error', message: `${error.message}` });
     }
   }
 
@@ -45,7 +45,7 @@ export default function App() {
       const bySubject = Object.fromEntries(raw.emails.map((e) => [e.emailId, e]));
       setState({ status: 'done', data, raw: bySubject });
     } catch (error) {
-      setState({ status: 'error', message: `${error.message}. Is the API running on 3005?` });
+      setState({ status: 'error', message: `${error.message}` });
     }
   }
 
