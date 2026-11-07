@@ -1,0 +1,40 @@
+# The name shown on the Actions tab and on pull requests.
+name: ci
+
+# When to run: on every pull request, and on every push to main.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# This workflow only needs to read the code.
+permissions:
+  contents: read
+
+jobs:
+  # "check" is the name you will require in the branch rule.
+  check:
+    # A fresh Linux machine from GitHub, thrown away afterwards.
+    runs-on: ubuntu-latest
+    steps:
+      # Download your code onto the machine.
+      - uses: actions/checkout@v5
+      # Install Node 24, the same version Lambda runs.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Unit, API and adapter tests
+        run: npm test
+      # Proves the React dashboard still builds.
+      - name: Build the dashboard
+        run: |
+          npm ci --prefix web
+          npm --prefix web run build
+      # Install the SAM CLI. The token avoids GitHub's rate limit.
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+      # Checks the template locally. No AWS login needed.
+      - name: Check the AWS template
+        run: sam validate --lint --region eu-west-2
