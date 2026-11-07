@@ -15,7 +15,8 @@ jobs:
   # "check" is the name you will require in the branch rule.
   check:
     # A fresh Linux machine from GitHub, thrown away afterwards.
-    runs-on: ubuntu-latest
+    # Pinned rather than ubuntu-latest, so the OS only changes when we change it here.
+    runs-on: ubuntu-26.04
     steps:
       # Download your code onto the machine.
       - uses: actions/checkout@v5
@@ -30,11 +31,11 @@ jobs:
         run: |
           npm ci --prefix web
           npm --prefix web run build
-      # Install the SAM CLI. The token avoids GitHub's rate limit.
-      - uses: aws-actions/setup-sam@v2
+      # Install the SAM CLI. v3 runs on Node 24 and passes the job's token by default,
+      # which avoids GitHub's rate limit.
+      - uses: aws-actions/setup-sam@v3
         with:
           use-installer: true
-          token: ${{ secrets.GITHUB_TOKEN }}
       # Checks the template locally. No AWS login needed.
       - name: Check the AWS template
         run: sam validate --lint --region eu-west-2
